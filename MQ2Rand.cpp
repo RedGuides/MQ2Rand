@@ -9,11 +9,10 @@
 ****
 *********************************************************************************/
 
-
-#include "../MQ2Plugin.h"
-
+#include <mq/Plugin.h>
 
 PreSetup("MQ2Rand");
+PLUGIN_VERSION(1.0);
 
 #define TIME unsigned long long
 
@@ -41,7 +40,7 @@ char szOutput[MAX_STRING] = "None";
 typedef struct _trROLL
 {
 	char Name[40];
-	int  Roll;						// Use ID's instead of pointers to reference this node.
+	int  Roll;                      // Use ID's instead of pointers to reference this node.
 	struct _trROLL* pNext;
 } trROLL;
 
@@ -120,7 +119,7 @@ void SortList()
 	ListUpdatedTM = MyTick;
 }
 
-void DestroyList(void)
+void DestroyList()
 {
 	trROLL* p = pList;
 	trROLL* q;
@@ -161,10 +160,9 @@ public:
 			WriteChatf("\agMQ2Rand\ax \ayMQUI_RandWnd.XML\ax - Missing UI element - Get new UI file");
 			return;
 		}
-		SetWndNotification(CMyWnd);
 	}
-	void ShowWin(void) { ((CXWnd*)this)->Show(1, 1); ((CXWnd*)this)->SetVisible(1); }
-	void HideWin(void) { ((CXWnd*)this)->Show(0, 0); ((CXWnd*)this)->SetVisible(0); }
+	void ShowWin() { ((CXWnd*)this)->Show(1, 1); ((CXWnd*)this)->SetVisible(1); }
+	void HideWin() { ((CXWnd*)this)->Show(0, 0); ((CXWnd*)this)->SetVisible(0); }
 
 	int  WndNotification(CXWnd* pWnd, unsigned int Message, void* pVoid) {
 		if (ErrorLoadingXML) return 0;
@@ -194,7 +192,7 @@ public:
 
 CMyWnd* MyWnd = 0;
 
-void CreateMyWindow(void)
+void CreateMyWindow()
 {
 	if (MyWnd) return;
 	if (pSidlMgr->FindScreenPieceTemplate("RandWnd")) {
@@ -212,7 +210,7 @@ void CreateMyWindow(void)
 	}
 }
 
-void DestroyMyWindow(void)
+void DestroyMyWindow()
 {
 	if (MyWnd)
 	{
@@ -224,7 +222,7 @@ void DestroyMyWindow(void)
 
 }
 
-void GetSectionName(void)
+void GetSectionName()
 {
 	if (!GetCharInfo()) return;
 	sprintf_s(szSection, "%s.%s", EQADDR_SERVERNAME, GetCharInfo()->Name);
@@ -240,14 +238,14 @@ template <unsigned int _Size>LPSTR SafeItoa(int _Value, char(&_Buffer)[_Size], i
 }
 
 
-void ReadINI(void)
+void ReadINI()
 {
 	GetSectionName();
 	CHAR szTemp[MAX_STRING] = { 0 };
 	PluginON = GetPrivateProfileInt(szSection, "ON", 1, INIFileName);
 }
 
-void WriteINI(void)
+void WriteINI()
 {
 	GetSectionName();
 	CHAR szTemp[MAX_STRING] = { 0 };
@@ -394,14 +392,14 @@ void SetListRCText(CListWnd* pList, int row, int column, size_t max, char* zForm
 
 
 
-void HideMyWindow(void)
+void HideMyWindow()
 {
 	if (!MyWnd) return;
 	MyWnd->HideWin();
 	WriteINI();
 }
 
-void ShowMyWindow(void)
+void ShowMyWindow()
 {
 	if (gGameState != GAMESTATE_INGAME || !pCharSpawn) return;
 	WindowLoaded = 1;
@@ -427,7 +425,7 @@ void ShowMyWindow(void)
 fEQCommand  pEQRandFunc = NULL;
 
 
-void GetOrginalRandomCommand(void)
+void GetOrginalRandomCommand()
 {
 	PCMDLIST pCmdListOrig = (PCMDLIST)EQADDR_CMDLIST;
 	for (int i = 0; pCmdListOrig[i].fAddress != 0; i++) {
@@ -455,7 +453,7 @@ void Command(PSPAWNINFO pChar, PCHAR Cmd)
 
 
 // Called once, when the plugin is to initialize
-PLUGIN_API VOID InitializePlugin(VOID)
+PLUGIN_API void InitializePlugin()
 {
 	GetOrginalRandomCommand();
 	AddXMLFile("MQUI_RandWnd.xml");
@@ -463,7 +461,7 @@ PLUGIN_API VOID InitializePlugin(VOID)
 }
 
 // Called once, when the plugin is to shutdown
-PLUGIN_API VOID ShutdownPlugin(VOID)
+PLUGIN_API void ShutdownPlugin()
 {
 	RemoveCommand("/random");
 	DestroyMyWindow();
@@ -471,12 +469,12 @@ PLUGIN_API VOID ShutdownPlugin(VOID)
 	DestroyList();
 }
 
-PLUGIN_API VOID OnCleanUI(VOID)
+PLUGIN_API void OnCleanUI()
 {
 	DestroyMyWindow();
 }
 
-PLUGIN_API VOID OnReloadUI(VOID)
+PLUGIN_API void OnReloadUI()
 {
 	if (gGameState == GAMESTATE_INGAME && pCharSpawn)
 	{
@@ -484,7 +482,7 @@ PLUGIN_API VOID OnReloadUI(VOID)
 	}
 }
 
-PLUGIN_API VOID SetGameState(DWORD GameState) {
+PLUGIN_API void SetGameState(int GameState) {
 	if (GameState == GAMESTATE_INGAME && GetCharInfo()) {
 		ReadINI();
 		if (!PluginON) return;
@@ -492,7 +490,7 @@ PLUGIN_API VOID SetGameState(DWORD GameState) {
 	}
 }
 
-PLUGIN_API VOID OnPulse(VOID)
+PLUGIN_API void OnPulse()
 {
 	MyTick = MQGetTickCount64();
 
@@ -612,7 +610,7 @@ PLUGIN_API VOID OnPulse(VOID)
 	RowSelected = -1;
 }
 
-PLUGIN_API DWORD OnIncomingChat(PCHAR Line, DWORD Color)
+PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 {
 	//if (Line[0]!='-') WriteChatf("-- %s -- %d --", Line, Color);
 
