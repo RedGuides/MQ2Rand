@@ -1,10 +1,10 @@
 /********************************************************************************
 ****
-**		MQ2Rand
+**      MQ2Rand
 **
-**		Author: Dewey2461@gmail.com
+**      Author: Dewey2461@gmail.com
 **
-**		This plugin helps a raid leader perform random loot sort and announcements
+**      This plugin helps a raid leader perform random loot sort and announcements
 **
 ****
 *********************************************************************************/
@@ -444,8 +444,8 @@ void Command(PSPAWNINFO pChar, PCHAR Cmd)
 	GetArg(Arg1, Cmd, 1);
 	GetArg(Arg2, Cmd, 2);
 
-	if (_stricmp(Arg1, "show") == 0) { ShowMyWindow();		return; }
-	if (_stricmp(Arg1, "hide") == 0) { HideMyWindow();		return; }
+	if (_stricmp(Arg1, "show") == 0) { ShowMyWindow(); return; }
+	if (_stricmp(Arg1, "hide") == 0) { HideMyWindow(); return; }
 
 	if (pEQRandFunc) pEQRandFunc(pChar, Cmd);
 }
