@@ -132,8 +132,8 @@ void DestroyList()
 	pList = NULL;
 }
 
-void ReadWindowINI(PCSIDLWND pWindow);
-void WriteWindowINI(PCSIDLWND pWindow);
+void ReadWindowINI(CSidlScreenWnd* pWindow);
+void WriteWindowINI(CSidlScreenWnd* pWindow);
 
 
 class CMyWnd : public CCustomWnd
@@ -202,8 +202,8 @@ void CreateMyWindow()
 			MyWnd = 0;
 		}
 		if (MyWnd) {
-			ReadWindowINI((PCSIDLWND)MyWnd);
-			WriteWindowINI((PCSIDLWND)MyWnd);
+			ReadWindowINI(MyWnd);
+			WriteWindowINI(MyWnd);
 			if (MyWnd->IsMinimized()) MyWnd->SetMinimized(0);
 			ListUpdatedTM = MyTick;
 		}
@@ -214,7 +214,7 @@ void DestroyMyWindow()
 {
 	if (MyWnd)
 	{
-		WriteWindowINI((PCSIDLWND)MyWnd);
+		WriteWindowINI(MyWnd);
 		MyWnd->List->DeleteAll();
 		delete MyWnd;
 		MyWnd = 0;
@@ -253,7 +253,7 @@ void WriteINI()
 	WritePrivateProfileString(szSection, "ON", SafeItoa(PluginON, szTemp, 10), INIFileName);
 }
 
-void ReadWindowINI(PCSIDLWND pWindow)
+void ReadWindowINI(CSidlScreenWnd* pWindow)
 {
 	char Buffer[MAX_STRING] = { 0 };
 	GetSectionName();
@@ -280,7 +280,7 @@ void ReadWindowINI(PCSIDLWND pWindow)
 	pWindow->SetBGColor(col.ARGB);
 }
 
-void WriteWindowINI(PCSIDLWND pWindow)
+void WriteWindowINI(CSidlScreenWnd* pWindow)
 {
 	CHAR szTemp[MAX_STRING] = { 0 };
 	GetSectionName();
@@ -360,7 +360,7 @@ void SetupButton(CXWnd* pWindow, int Vis, long X, long Y, long DX, long DY, char
 		va_list vaList; va_start(vaList, zFormat);
 		vsprintf_s(szOutput, zFormat, vaList);
 		if (szOutput[0])
-			pWindow->CSetWindowText(szOutput);
+			pWindow->SetWindowText(szOutput);
 	}
 }
 
@@ -386,7 +386,7 @@ void SetListRCText(CListWnd* pList, int row, int column, size_t max, char* zForm
 		vsprintf_s(szOutput, zFormat, vaList);
 		if (strlen(szOutput) > max) szOutput[max] = 0;
 		if (szOutput[0])
-			pList->SetItemText(row, column, &CXStr(szOutput));
+			pList->SetItemText(row, column, szOutput);
 	}
 }
 
@@ -513,7 +513,7 @@ PLUGIN_API void OnPulse()
 		MyWnd->List->SetVisible(0);
 
 		sprintf_s(szOutput, "%d", MaxRand);
-		SetCXStr(&MyWnd->Edit->InputText, szOutput);
+		MyWnd->Edit->InputText = szOutput;
 
 
 		MyWnd->List->SetVisible(1);
@@ -521,9 +521,9 @@ PLUGIN_API void OnPulse()
 		SetupColumn(MyWnd->List, 1, 0, 45, "Val");
 		SetupColumn(MyWnd->List, 2, 0, 160, "Player");
 
-		WindowSetLoc((CXWnd*)MyWnd->List, 1, 51);
-		WindowSetSize((CXWnd*)MyWnd->List, 170, 22 + 14 * 10);
-		WindowSetSize((CXWnd*)MyWnd, 170, 104 + 14 * 10);
+		WindowSetLoc(MyWnd->List, 1, 51);
+		WindowSetSize(MyWnd->List, 170, 22 + 14 * 10);
+		WindowSetSize(MyWnd, 170, 104 + 14 * 10);
 
 		if (SortNeeded) SortList();
 		ListUpdatedTM = MyTick;
@@ -550,7 +550,7 @@ PLUGIN_API void OnPulse()
 
 	if (Btn1Pressed) {
 		if (Active == 0) {
-			GetCXStr(MyWnd->Edit->InputText, szOutput, MAX_STRING);
+			MyWnd->Edit->InputText = szOutput;
 			MaxRand = (int)atof(szOutput);
 			if (MaxRand > 0) {
 				DestroyList();
@@ -617,9 +617,9 @@ PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 	//if (Color == 287 || Color == 360) {
 
 	if (strncmp(Line, "**A Magic Die is rolled by", 25) == 0) {
-		char* p1 = strstr(Line, " from ");
-		char* p2 = strstr(Line, " to ");
-		char* p3 = strstr(Line, " up a ");
+		const char* p1 = strstr(Line, " from ");
+		const char* p2 = strstr(Line, " to ");
+		const char* p3 = strstr(Line, " up a ");
 
 		if (p1 && p2 && p3) {
 			int lo, hi, v;
@@ -629,7 +629,7 @@ PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 
 			// Grab name
 			char szName[40];
-			char* p = Line + 27;
+			const char* p = Line + 27;
 			char* q = szName;
 			int l = 0;
 			while (*p != '.' && l < 35)
