@@ -550,8 +550,7 @@ PLUGIN_API void OnPulse()
 
 	if (Btn1Pressed) {
 		if (Active == 0) {
-			MyWnd->Edit->InputText = szOutput;
-			MaxRand = (int)atof(szOutput);
+			MaxRand = GetIntFromString(MyWnd->Edit->InputText, 0);
 			if (MaxRand > 0) {
 				DestroyList();
 				ListUpdatedTM = MyTick;
