@@ -168,7 +168,7 @@ public:
 		if (ErrorLoadingXML) return 0;
 
 		if (Message == XWM_COLUMNCLICK && pWnd == (CXWnd*)List) {
-			int C = (int)(pVoid);
+			int C = (int)(intptr_t)(pVoid);
 			SortListBy = C;
 			ListUpdatedTM = MyTick;
 			SortNeeded = 1;
@@ -178,7 +178,7 @@ public:
 		// Left mouse up ?
 		if (Message == XWM_LCLICK) {
 			if (pWnd == (CXWnd*)List) {
-				RowSelected = (int)(pVoid);
+				RowSelected = (int)(intptr_t)(pVoid);
 				RowSelectedTM = MyTick;
 			}
 			if (pWnd == (CXWnd*)Btn1) Btn1Pressed = 1;
