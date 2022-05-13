@@ -224,8 +224,8 @@ void DestroyMyWindow()
 
 void GetSectionName()
 {
-	if (!GetCharInfo()) return;
-	sprintf_s(szSection, "%s.%s", EQADDR_SERVERNAME, GetCharInfo()->Name);
+	if (!pLocalPC) return;
+	sprintf_s(szSection, "%s.%s", GetServerShortName(), pLocalPC->Name);
 }
 
 template <unsigned int _Size>LPSTR SafeItoa(int _Value, char(&_Buffer)[_Size], int _Radix)
