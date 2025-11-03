@@ -14,7 +14,7 @@
 PreSetup("MQ2Rand");
 PLUGIN_VERSION(1.0);
 
-#define TIME unsigned long long
+using TIME = uint64_t;
 
 int  ErrorLoadingXML = 0;
 int  SortListBy = 0;
@@ -34,17 +34,24 @@ int  SortNeeded = 0;
 int  MaxRand = 999;
 int  Active = 0;
 
+fEQCommand  pEQRandFunc = nullptr;
+
 char szSection[MAX_STRING] = "None";
 char szOutput[MAX_STRING] = "None";
 
-typedef struct _trROLL
+struct trROLL
 {
 	char Name[40];
-	int  Roll;                      // Use ID's instead of pointers to reference this node.
-	struct _trROLL* pNext;
-} trROLL;
+	int  Roll = 0;                  // Use ID's instead of pointers to reference this node.
+	trROLL* pNext = nullptr;
 
-trROLL* pList = NULL;
+	trROLL()
+	{
+		memset(Name, 0, sizeof(Name));
+	}
+};
+
+trROLL* pList = nullptr;
 
 int CompNode(trROLL* p1, trROLL* p2)
 {
@@ -69,9 +76,7 @@ trROLL* GetNodeByName(char* Name)
 
 trROLL* AddNewNode(char* Name, int Roll)
 {
-	trROLL* p;
-	p = (trROLL*)malloc(sizeof(trROLL));
-	memset(p, 0, sizeof(trROLL));
+	trROLL* p = new trROLL();
 
 	// just drop it in front and resort later
 	p->pNext = pList;
@@ -88,21 +93,19 @@ trROLL* AddNewNode(char* Name, int Roll)
 void SortList()
 {
 	if (!pList) return;
-	//WriteChatf("SortList");
 
 	trROLL* pSrc = pList;
-	trROLL* p, * q, * n;
 
-	pList = NULL;
+	pList = nullptr;
 	while (pSrc)
 	{
 		// remove the node
-		n = pSrc;
+		trROLL* n = pSrc;
 		pSrc = pSrc->pNext;
 
 		// traverse the list looking for where it fits
-		p = pList;
-		q = NULL;
+		trROLL* p = pList;
+		trROLL* q = nullptr;
 		while (p && CompNode(p, n) > 0) {
 			q = p;
 			p = p->pNext;
@@ -122,14 +125,13 @@ void SortList()
 void DestroyList()
 {
 	trROLL* p = pList;
-	trROLL* q;
 	while (p)
 	{
-		q = p->pNext;
-		free(p);
+		trROLL* q = p->pNext;
+		delete p;
 		p = q;
 	}
-	pList = NULL;
+	pList = nullptr;
 }
 
 void ReadWindowINI(CSidlScreenWnd* pWindow);
@@ -139,7 +141,6 @@ void WriteWindowINI(CSidlScreenWnd* pWindow);
 class CMyWnd : public CCustomWnd
 {
 public:
-
 	CListWnd* List;
 	CButtonWnd* Btn1;
 	CButtonWnd* Btn2;
@@ -147,7 +148,7 @@ public:
 	CEditWnd* Edit;
 	CLabelWnd* Label;
 
-	CMyWnd() :CCustomWnd("RandWnd") {
+	CMyWnd() : CCustomWnd("RandWnd") {
 		ErrorLoadingXML = 0;
 		List = (CListWnd*)GetChildItem("RW_List");
 		Btn1 = (CButtonWnd*)GetChildItem("RW_Btn1");
@@ -161,36 +162,38 @@ public:
 			return;
 		}
 	}
-	void ShowWin() { ((CXWnd*)this)->Show(1, 1); ((CXWnd*)this)->SetVisible(1); }
-	void HideWin() { ((CXWnd*)this)->Show(0, 0); ((CXWnd*)this)->SetVisible(0); }
 
-	int  WndNotification(CXWnd* pWnd, unsigned int Message, void* pVoid) {
+	virtual ~CMyWnd() override
+	{
+		List->DeleteAll();
+	}
+
+	virtual int WndNotification(CXWnd* pWnd, unsigned int Message, void* pVoid) override {
 		if (ErrorLoadingXML) return 0;
 
-		if (Message == XWM_COLUMNCLICK && pWnd == (CXWnd*)List) {
+		if (Message == XWM_COLUMNCLICK && pWnd == List) {
 			int C = (int)(intptr_t)(pVoid);
 			SortListBy = C;
 			ListUpdatedTM = MyTick;
 			SortNeeded = 1;
-
-			//WriteChatf("Messaage::Column = %d ",C);
 		}
+
 		// Left mouse up ?
 		if (Message == XWM_LCLICK) {
-			if (pWnd == (CXWnd*)List) {
+			if (pWnd == List) {
 				RowSelected = (int)(intptr_t)(pVoid);
 				RowSelectedTM = MyTick;
 			}
-			if (pWnd == (CXWnd*)Btn1) Btn1Pressed = 1;
-			if (pWnd == (CXWnd*)Btn2) Btn2Pressed = 1;
-			if (pWnd == (CXWnd*)Btn3) Btn3Pressed = 1;
+			if (pWnd == Btn1) Btn1Pressed = 1;
+			if (pWnd == Btn2) Btn2Pressed = 1;
+			if (pWnd == Btn3) Btn3Pressed = 1;
 		}
 
 		return CSidlScreenWnd::WndNotification(pWnd, Message, pVoid);
-	};
+	}
 };
 
-CMyWnd* MyWnd = 0;
+CMyWnd* MyWnd = nullptr;
 
 void CreateMyWindow()
 {
@@ -199,7 +202,7 @@ void CreateMyWindow()
 		MyWnd = new CMyWnd;
 		if (MyWnd && ErrorLoadingXML) {
 			delete MyWnd;
-			MyWnd = 0;
+			MyWnd = nullptr;
 		}
 		if (MyWnd) {
 			ReadWindowINI(MyWnd);
@@ -215,9 +218,8 @@ void DestroyMyWindow()
 	if (MyWnd)
 	{
 		WriteWindowINI(MyWnd);
-		MyWnd->List->DeleteAll();
 		delete MyWnd;
-		MyWnd = 0;
+		MyWnd = nullptr;
 	}
 
 }
@@ -242,7 +244,6 @@ void WriteINI()
 
 void ReadWindowINI(CSidlScreenWnd* pWindow)
 {
-	char Buffer[MAX_STRING] = { 0 };
 	GetSectionName();
 
 	LONG L = GetPrivateProfileInt(szSection, "ChatLeft", 10, INIFileName);
@@ -269,7 +270,6 @@ void ReadWindowINI(CSidlScreenWnd* pWindow)
 
 void WriteWindowINI(CSidlScreenWnd* pWindow)
 {
-	CHAR szTemp[MAX_STRING] = { 0 };
 	GetSectionName();
 
 	if (pWindow->IsMinimized())
@@ -382,7 +382,7 @@ void SetListRCText(CListWnd* pList, int row, int column, size_t max, const char*
 void HideMyWindow()
 {
 	if (!MyWnd) return;
-	MyWnd->HideWin();
+	MyWnd->Show(false);
 	WriteINI();
 }
 
@@ -403,25 +403,19 @@ void ShowMyWindow()
 		ErrorLoadingXML = 1;
 		return;
 	}
-	MyWnd->ShowWin();
+	MyWnd->Show(true);
 	WriteINI();
 }
 
-
-
-fEQCommand  pEQRandFunc = NULL;
-
-
 void GetOrginalRandomCommand()
 {
-	PCMDLIST pCmdListOrig = (PCMDLIST)EQADDR_CMDLIST;
-	for (int i = 0; pCmdListOrig[i].fAddress != 0; i++) {
+	PCMDLIST pCmdListOrig = EQADDR_CMDLIST;
+	for (int i = 0; pCmdListOrig[i].fAddress != nullptr; i++) {
 		if (!strcmp(pCmdListOrig[i].szName, "/random")) {
-			pEQRandFunc = (fEQCommand)pCmdListOrig[i].fAddress;
+			pEQRandFunc = pCmdListOrig[i].fAddress;
 		}
 	}
 }
-
 
 void Command(PSPAWNINFO pChar, PCHAR Cmd)
 {
@@ -436,8 +430,6 @@ void Command(PSPAWNINFO pChar, PCHAR Cmd)
 
 	if (pEQRandFunc) pEQRandFunc(pChar, Cmd);
 }
-
-
 
 // Called once, when the plugin is to initialize
 PLUGIN_API void InitializePlugin()
@@ -469,7 +461,8 @@ PLUGIN_API void OnReloadUI()
 	}
 }
 
-PLUGIN_API void SetGameState(int GameState) {
+PLUGIN_API void SetGameState(int GameState)
+{
 	if (GameState == GAMESTATE_INGAME && pLocalPC)
 	{
 		ReadINI();
@@ -481,10 +474,6 @@ PLUGIN_API void OnPulse()
 	MyTick = MQGetTickCount64();
 
 	static TIME TM = 0;
-	if (rand() % 100 > 95) {
-		//WriteChatf("OnPulse::Active %d",Active);
-
-	}
 
 	if (gGameState != GAMESTATE_INGAME) return;
 	if (!pLocalPlayer) return;
@@ -493,7 +482,7 @@ PLUGIN_API void OnPulse()
 
 
 	if (ListUpdatedTM > TM) {
-		SetupButton((CXWnd*)MyWnd->Edit, 1, 5, 1, 65, 20, " ");
+		SetupButton(MyWnd->Edit, 1, 5, 1, 65, 20, " ");
 
 		MyWnd->Label->SetVisible(0);
 		MyWnd->List->SetVisible(0);
@@ -520,7 +509,7 @@ PLUGIN_API void OnPulse()
 		trROLL* p = pList;
 		while (p) {
 
-			MyWnd->List->AddString("", 0xFFFFFFFF, 0, 0);
+			MyWnd->List->AddString("", 0xFFFFFFFF);
 
 			SetListRCText(MyWnd->List, N, 0, 25, "%d", N + 1);
 			SetListRCText(MyWnd->List, N, 1, 25, "%d", p->Roll);
@@ -597,10 +586,6 @@ PLUGIN_API void OnPulse()
 
 PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 {
-	//if (Line[0]!='-') WriteChatf("-- %s -- %d --", Line, Color);
-
-	//if (Color == 287 || Color == 360) {
-
 	if (strncmp(Line, "**A Magic Die is rolled by", 25) == 0) {
 		const char* p1 = strstr(Line, " from ");
 		const char* p2 = strstr(Line, " to ");
@@ -623,10 +608,6 @@ PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 				l++;
 			}
 			*q = 0;
-
-			//WriteChatf("lo:%d hi:%d v:%d w:%s", lo, hi, v,szName);
-
-
 
 			if (Active == 1 && (hi != MaxRand || lo != 0)) {
 				sprintf_s(szOutput, "/timed %d /rs RAND: [%s] roll invalid - reroll /rand %d", (rand() % 10) + 10, szName, MaxRand);
@@ -652,6 +633,6 @@ PLUGIN_API int OnIncomingChat(const char* Line, int Color)
 			}
 		}
 	}
-	//}
+
 	return 0;
 }
