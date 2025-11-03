@@ -27,7 +27,7 @@ int  Btn3Pressed = 0;
 
 int  RowSelected = 0;
 TIME RowSelectedTM = 0;
-int  PluginON = 1;
+bool  PluginON = true;
 int  MyWindowState = 0;
 int  WindowLoaded = 0;
 int  SortNeeded = 0;
@@ -228,29 +228,16 @@ void GetSectionName()
 	sprintf_s(szSection, "%s.%s", GetServerShortName(), pLocalPC->Name);
 }
 
-template <unsigned int _Size>LPSTR SafeItoa(int _Value, char(&_Buffer)[_Size], int _Radix)
-{
-	errno_t err = _itoa_s(_Value, _Buffer, _Radix);
-	if (!err) {
-		return _Buffer;
-	}
-	return "";
-}
-
-
 void ReadINI()
 {
 	GetSectionName();
-	CHAR szTemp[MAX_STRING] = { 0 };
-	PluginON = GetPrivateProfileInt(szSection, "ON", 1, INIFileName);
+	PluginON = GetPrivateProfileBool(szSection, "ON", true, INIFileName);
 }
 
 void WriteINI()
 {
 	GetSectionName();
-	CHAR szTemp[MAX_STRING] = { 0 };
-
-	WritePrivateProfileString(szSection, "ON", SafeItoa(PluginON, szTemp, 10), INIFileName);
+	WritePrivateProfileBool(szSection, "ON", PluginON, INIFileName);
 }
 
 void ReadWindowINI(CSidlScreenWnd* pWindow)
@@ -287,31 +274,31 @@ void WriteWindowINI(CSidlScreenWnd* pWindow)
 
 	if (pWindow->IsMinimized())
 	{
-		WritePrivateProfileString(szSection, "ChatTop", SafeItoa(pWindow->GetOldLocation().top, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatBottom", SafeItoa(pWindow->GetOldLocation().bottom, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatLeft", SafeItoa(pWindow->GetOldLocation().left, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatRight", SafeItoa(pWindow->GetOldLocation().right, szTemp, 10), INIFileName);
+		WritePrivateProfileInt(szSection, "ChatTop", pWindow->GetOldLocation().top, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatBottom", pWindow->GetOldLocation().bottom, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatLeft", pWindow->GetOldLocation().left, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatRight", pWindow->GetOldLocation().right, INIFileName);
 	}
 	else
 	{
-		WritePrivateProfileString(szSection, "ChatTop", SafeItoa(pWindow->GetLocation().top, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatBottom", SafeItoa(pWindow->GetLocation().bottom, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatLeft", SafeItoa(pWindow->GetLocation().left, szTemp, 10), INIFileName);
-		WritePrivateProfileString(szSection, "ChatRight", SafeItoa(pWindow->GetLocation().right, szTemp, 10), INIFileName);
+		WritePrivateProfileInt(szSection, "ChatTop", pWindow->GetLocation().top, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatBottom", pWindow->GetLocation().bottom, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatLeft", pWindow->GetLocation().left, INIFileName);
+		WritePrivateProfileInt(szSection, "ChatRight", pWindow->GetLocation().right, INIFileName);
 	}
-	WritePrivateProfileString(szSection, "Locked", SafeItoa(pWindow->IsLocked(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "Fades", SafeItoa(pWindow->GetFades(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "Delay", SafeItoa(pWindow->GetFadeDelay(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "Duration", SafeItoa(pWindow->GetFadeDuration(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "Alpha", SafeItoa(pWindow->GetAlpha(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "FadeToAlpha", SafeItoa(pWindow->GetFadeToAlpha(), szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "BGType", SafeItoa(pWindow->GetBGType(), szTemp, 10), INIFileName);
+	WritePrivateProfileInt(szSection, "Locked", pWindow->IsLocked(), INIFileName);
+	WritePrivateProfileInt(szSection, "Fades", pWindow->GetFades(), INIFileName);
+	WritePrivateProfileInt(szSection, "Delay", pWindow->GetFadeDelay(), INIFileName);
+	WritePrivateProfileInt(szSection, "Duration", pWindow->GetFadeDuration(), INIFileName);
+	WritePrivateProfileInt(szSection, "Alpha", pWindow->GetAlpha(), INIFileName);
+	WritePrivateProfileInt(szSection, "FadeToAlpha", pWindow->GetFadeToAlpha(), INIFileName);
+	WritePrivateProfileInt(szSection, "BGType", pWindow->GetBGType(), INIFileName);
 	ARGBCOLOR col = { 0 };
 	col.ARGB = pWindow->GetBGColor();
-	WritePrivateProfileString(szSection, "BGTint.alpha", SafeItoa(col.A, szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "BGTint.red", SafeItoa(col.R, szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "BGTint.green", SafeItoa(col.G, szTemp, 10), INIFileName);
-	WritePrivateProfileString(szSection, "BGTint.blue", SafeItoa(col.B, szTemp, 10), INIFileName);
+	WritePrivateProfileInt(szSection, "BGTint.alpha", col.A, INIFileName);
+	WritePrivateProfileInt(szSection, "BGTint.red", col.R, INIFileName);
+	WritePrivateProfileInt(szSection, "BGTint.green", col.G, INIFileName);
+	WritePrivateProfileInt(szSection, "BGTint.blue", col.B, INIFileName);
 }
 
 void WindowSetSizeLoc(CXWnd* pWindow, long X, long Y, long DX, long DY)
@@ -345,7 +332,7 @@ void WindowSetLoc(CXWnd* pWindow, long X, long Y)
 	pWindow->Move({ X, Y, X + DX, Y + DY });
 }
 
-void SetupButton(CXWnd* pWindow, int Vis, long X, long Y, long DX, long DY, char* zFormat, ...)
+void SetupButton(CXWnd* pWindow, int Vis, long X, long Y, long DX, long DY, const char* zFormat, ...)
 {
 	pWindow->SetVisible(Vis);
 	if (!Vis) return;
@@ -365,7 +352,7 @@ void SetupButton(CXWnd* pWindow, int Vis, long X, long Y, long DX, long DY, char
 }
 
 
-void SetupColumn(CListWnd* pList, int column, int justification, int width, char* zFormat, ...)
+void SetupColumn(CListWnd* pList, int column, int justification, int width, const char* zFormat, ...)
 {
 	if (!pList) return;
 	if (zFormat && zFormat[0]) {
@@ -378,7 +365,7 @@ void SetupColumn(CListWnd* pList, int column, int justification, int width, char
 	pList->SetColumnJustification(column, justification);
 }
 
-void SetListRCText(CListWnd* pList, int row, int column, size_t max, char* zFormat, ...)
+void SetListRCText(CListWnd* pList, int row, int column, size_t max, const char* zFormat, ...)
 {
 	if (!pList) return;
 	if (zFormat && zFormat[0]) {
@@ -401,7 +388,7 @@ void HideMyWindow()
 
 void ShowMyWindow()
 {
-	if (gGameState != GAMESTATE_INGAME || !pCharSpawn) return;
+	if (gGameState != GAMESTATE_INGAME || !pLocalPlayer) return;
 	WindowLoaded = 1;
 	if (!PluginON) {
 		WriteChatf("\ag[MQ2Rand]\aw Unable to show window while plugin is OFF");
@@ -476,17 +463,16 @@ PLUGIN_API void OnCleanUI()
 
 PLUGIN_API void OnReloadUI()
 {
-	if (gGameState == GAMESTATE_INGAME && pCharSpawn)
+	if (gGameState == GAMESTATE_INGAME && pLocalPlayer)
 	{
 		if (MyWindowState == 1) ShowMyWindow();
 	}
 }
 
 PLUGIN_API void SetGameState(int GameState) {
-	if (GameState == GAMESTATE_INGAME && GetCharInfo()) {
+	if (GameState == GAMESTATE_INGAME && pLocalPC)
+	{
 		ReadINI();
-		if (!PluginON) return;
-		//ShowMyWindow();
 	}
 }
 
@@ -501,7 +487,7 @@ PLUGIN_API void OnPulse()
 	}
 
 	if (gGameState != GAMESTATE_INGAME) return;
-	if (!pCharSpawn) return;
+	if (!pLocalPlayer) return;
 	if (Active > 0 && !WindowLoaded) ShowMyWindow();
 	if (!MyWnd) return;
 
